@@ -9,7 +9,7 @@ http://192.168.56.105/DVWA/login.php \
 >login.html
 
 TOKEN=$(grep -oP "name='user_token' value='\K[^']+" login.html) #saves user token variable found in login html
-PHPSESSID=\((awk '\)6=="PHPSESSID"{print $7}' cookies.txt) #saves PHP session ID found in cookies
+PHPSESSID=$(awk '$6=="PHPSESSID"{print $7}' cookies.txt) #saves PHP session ID found in cookies
 
 #logs in using cookies and user token
 curl -s -b cookies.txt \
