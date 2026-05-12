@@ -10,6 +10,5 @@ This repository stores the payloads used in the penetration testing of the SQL I
 
 - high_security_level.sh contains an executable shell script used for automating attacks on the high security level.
 
-You can read more about the attack in the blog linked below, and there you will also find YouTube videos showing a screencast of each attack.
-
-https://pentesting-dvwa.hashnode.dev/
+You can read more about the attack in the blog here: https://pentesting-dvwa.hashnode.dev/
+You can watch a screencast of the attack here: https://youtu.be/Y8ZUrzOSbLI?si=e_kxgME5v272FV0_
